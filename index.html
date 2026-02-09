@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For Shru</title>
+    <style>
+        /* --- CORE STYLES & RESET --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #050508; /* Deepest Midnight */
+            color: #e0e0e0;
+            font-family: 'Georgia', serif; /* Elegant Serif */
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* --- BACKGROUND EFFECTS --- */
+        #bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .vignette {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 40%, #000000 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* --- UI CONTAINER --- */
+        .container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            transition: opacity 1s ease;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5), 0 0 20px rgba(147, 112, 219, 0.3);
+            line-height: 1.2;
+            opacity: 0;
+            animation: fadeInDown 1.5s ease forwards;
+        }
+
+        p {
+            font-size: 1.3rem;
+            line-height: 1.6;
+            color: #dcdcdc;
+            margin-bottom: 1.5rem;
+        }
+
+        .highlight {
+            color: #ffd700; /* Gold */
+            font-style: italic;
+        }
+
+        /* --- BUTTONS --- */
+        .btn-group {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+            min-height: 60px; /* Space for moving button */
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-family: 'Georgia', serif;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            outline: none;
+        }
+
+        .btn-yes {
+            background: linear-gradient(135deg, #2a0a2e, #4b0082);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(75, 0, 130, 0.4);
+        }
+
+        .btn-yes:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(255, 105, 180, 0.6);
+            border-color: #ff69b4;
+        }
+
+        .btn-no {
+            background: transparent;
+            color: #a0a0a0;
+            border-color: #444;
+        }
+
+        /* The evasive class for absolute positioning */
+        .evasive {
+            position: absolute;
+            transition: top 0.2s ease-out, left 0.2s ease-out; 
+            /* Quick movement, not instant, to look smooth */
+        }
+
+        /* --- SCREENS --- */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .active {
+            display: flex;
+        }
+
+        /* --- MODAL (For the "Are you sure" flow) --- */
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: #111;
+            border: 1px solid #9370db;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(147, 112, 219, 0.2);
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+        }
+
+        /* --- POEM STYLING --- */
+        .poem-line {
+            opacity: 0;
+            transform: translateY(20px);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #e6e6fa; /* Lavender */
+        }
+
+        .poem-signature {
+            margin-top: 30px;
+            font-size: 1.4rem;
+            color: #ff69b4; /* Hot Pink */
+            font-style: italic;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .heart-beat {
+            animation: pulse 1.5s infinite;
+            display: inline-block;
+            color: #ff69b4;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .btn-group { flex-direction: column; gap: 1rem; align-items: center; height: 140px; }
+            button { width: 80%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Canvas for Particles/Fireworks -->
+    <canvas id="bg-canvas"></canvas>
+    <div class="vignette"></div>
+
+    <div class="container">
+
+        <!-- SCREEN 1: THE QUESTION -->
+        <div id="screen-landing" class="screen active">
+            <h1>Shru will u be my Valentine?</h1>
+            <div class="btn-group" id="main-btn-group">
+                <button class="btn-yes" onclick="handleYes()">YES</button>
+                <button class="btn-no" id="btn-no">NO</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: YAY MESSAGE -->
+        <div id="screen-yay" class="screen">
+            <h1 style="color: #ff69b4;">Yay you said yes! <span class="heart-beat">❤</span></h1>
+            <p>Thank you for making my day special.</p>
+            <div style="height: 20px;"></div> <!-- Spacer -->
+            <button class="btn-yes" onclick="showDeepMessage()">Continue</button>
+        </div>
+
+        <!-- SCREEN 3: DEEP MESSAGE -->
+        <div id="screen-deep" class="screen">
+            <p>I will always love you no matter what.</p>
+            <p>You are the best part of my life.</p>
+            <p>I can’t imagine a life without you.</p>
+            <div style="margin-top: 2rem;">
+                <p style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 0.5rem;">Tap to continue</p>
+                <button class="btn-yes" onclick="showLoveLetter()">Open Letter</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: LOVE LETTER -->
+        <div id="screen-letter" class="screen">
+            <div id="poem-container">
+                <!-- Lines will be injected via JS for timing -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL FOR THE "NO" FLOW -->
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-text" style="margin-bottom: 20px; color: #fff;">Are you sure?</h2>
+            <div class="btn-group" style="margin-top: 10px; gap: 10px;">
+                <button class="btn-yes" id="modal-yes-btn" onclick="handleYes()">YES</button>
+                <button class="btn-no" id="modal-no-btn" onclick="advanceNoFlow()">NO</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION & STATE ---
+        const btnNo = document.getElementById('btn-no');
+        const bgCanvas = document.getElementById('bg-canvas');
+        const ctx = bgCanvas.getContext('2d');
+        
+        let evasiveMode = true; // Button runs away
+        let noStep = 0; // Steps for the persistent "No" clicker
+        let particles = [];
+        let fireworks = [];
+        
+        // --- 1. BACKGROUND ANIMATION (Starfield / Particles) ---
+        let w, h;
+        
+        function resize() {
+            w = bgCanvas.width = window.innerWidth;
+            h = bgCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * w;
+                this.y = Math.random() * h;
+                this.size = Math.random() * 2;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.alpha = Math.random();
+                this.color = `rgba(147, 112, 219, ${this.alpha})`; // Purple tint
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if(this.x > w) this.x = 0;
+                if(this.x < 0) this.x = w;
+                if(this.y > h) this.y = 0;
+                if(this.y < 0) this.y = h;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Initialize Background Particles
+        function initParticles() {
+            for(let i = 0; i < 100; i++) {
+                particles.push(new Particle());
+            }
+        }
+        initParticles();
+
+        // --- 2. FIREWORKS ENGINE ---
+        function createFirework(x, y) {
+            const colors = ['#ff0040', '#ff0080', '#ff00bf', '#bf00ff', '#ffd700', '#ffffff'];
+            const particleCount = 60;
+            for (let i = 0; i < particleCount; i++) {
+                fireworks.push({
+                    x: x,
+                    y: y,
+                    angle: Math.random() * Math.PI * 2,
+                    speed: Math.random() * 5 + 2,
+                    friction: 0.95,
+                    gravity: 0.1,
+                    hue: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: 1,
+                    decay: Math.random() * 0.015 + 0.01
+                });
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, w, h);
+            
+            // Draw Starfield
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // Draw Fireworks
+            for (let i = fireworks.length - 1; i >= 0; i--) {
+                let f = fireworks[i];
+                f.speed *= f.friction;
+                f.x += Math.cos(f.angle) * f.speed;
+                f.y += Math.sin(f.angle) * f.speed + f.gravity;
+                f.alpha -= f.decay;
+
+                ctx.globalAlpha = f.alpha;
+                ctx.fillStyle = f.hue;
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                if (f.alpha <= 0) fireworks.splice(i, 1);
+            }
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- 3. EVASIVE BUTTON LOGIC ---
+        // Runs for 15 seconds
+        const startTime = Date.now();
+        const EVASION_DURATION = 15000; // 15 seconds
+
+        function moveButton(e) {
+            if (!evasiveMode) return;
+
+            // Get button dimensions
+            const btnRect = btnNo.getBoundingClientRect();
+            const btnCenterX = btnRect.left + btnRect.width / 2;
+            const btnCenterY = btnRect.top + btnRect.height / 2;
+
+            // Determine cursor/touch position
+            let mouseX, mouseY;
+            if (e.type.includes('touch')) {
+                mouseX = e.touches[0].clientX;
+                mouseY = e.touches[0].clientY;
+            } else {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            }
+
+            // Distance check
+            const dist = Math.sqrt(Math.pow(mouseX - btnCenterX, 2) + Math.pow(mouseY - btnCenterY, 2));
+            
+            // If close (150px radius), move it
+            if (dist < 150) {
+                // Calculate new position (opposite direction)
+                const angle = Math.atan2(mouseY - btnCenterY, mouseX - btnCenterX);
+                const moveDist = 200; // Jump distance
+                
+                let newX = Math.cos(angle + Math.PI) * moveDist;
+                let newY = Math.sin(angle + Math.PI) * moveDist;
+
+                // Make position relative for transform
+                // We apply transform on top of static flow, so we need to track offsets
+                // Simple hack: Randomly jump within viewport safe area if cornered
+                
+                // Better approach for "Random + Opposite":
+                // Just randomizing within safe bounds ensures it doesn't get stuck off-screen
+                const maxX = window.innerWidth - btnRect.width - 20;
+                const maxY = window.innerHeight - btnRect.height - 20;
+                
+                const randomX = Math.random() * maxX;
+                const randomY = Math.random() * maxY;
+
+                // Apply absolute positioning to break from flex flow
+                btnNo.style.position = 'fixed';
+                btnNo.style.left = randomX + 'px';
+                btnNo.style.top = randomY + 'px';
+            }
+        }
+
+        // Attach listeners for desktop and mobile
+        document.addEventListener('mousemove', moveButton);
+        document.addEventListener('touchstart', moveButton, {passive: false});
+
+        // Timer to disable evasive mode
+        setTimeout(() => {
+            evasiveMode = false;
+            // Return to normal flow
+            btnNo.style.position = 'relative';
+            btnNo.style.left = 'auto';
+            btnNo.style.top = 'auto';
+            btnNo.style.transform = 'none';
+            // Enable clicking behavior logic handled in click listener below
+            console.log("Evasion ended");
+        }, EVASION_DURATION);
+
+
+        // --- 4. CLICK HANDLERS ---
+
+        // Handle NO Click (After 15s)
+        btnNo.addEventListener('click', (e) => {
+            if (evasiveMode) {
+                e.preventDefault(); // Should be hard to click, but just in case
+                return;
+            }
+            // Show Modal
+            document.getElementById('modal-overlay').style.display = 'flex';
+        });
+
+        // Handle Modal NO logic
+        function advanceNoFlow() {
+            const title = document.getElementById('modal-text');
+            const yesBtn = document.getElementById('modal-yes-btn');
+            const noBtn = document.getElementById('modal-no-btn');
+
+            noStep++;
+
+            if (noStep === 1) {
+                title.innerText = "What if I get you spicy fried rice?";
+            } else if (noStep === 2) {
+                title.innerHTML = "Invalid choice.<br><span style='font-size:0.8em; color:#888'>The system has detected you are already my Valentine.</span>";
+                noBtn.style.display = 'none'; // Hide No button
+                yesBtn.innerText = "Okay fine";
+                yesBtn.style.width = '100%';
+            }
+        }
+
+        // Handle YES (Main or Modal)
+        function handleYes() {
+            // Close modal if open
+            document.getElementById('modal-overlay').style.display = 'none';
+            
+            // Switch Screens
+            switchScreen('screen-landing', 'screen-yay');
+
+            // Trigger Celebration
+            launchCelebration();
+        }
+
+        function launchCelebration() {
+            // Burst of fireworks
+            let interval = setInterval(() => {
+                createFirework(Math.random() * w, Math.random() * h / 2);
+            }, 300);
+
+            // Stop automatic fireworks after 3 seconds
+            setTimeout(() => {
+                clearInterval(interval);
+            }, 3000);
+
+            // Click listener on screen to create more on tap
+            document.addEventListener('click', (e) => {
+                createFirework(e.clientX, e.clientY);
+            });
+        }
+
+        // Flow transitions
+        function switchScreen(fromId, toId) {
+            const fromEl = document.getElementById(fromId);
+            const toEl = document.getElementById(toId);
+
+            fromEl.style.opacity = 0;
+            setTimeout(() => {
+                fromEl.classList.remove('active');
+                toEl.classList.add('active');
+                // Trigger reflow
+                void toEl.offsetWidth; 
+                toEl.style.animation = 'fadeInDown 1s ease forwards';
+            }, 500);
+        }
+
+        function showDeepMessage() {
+            switchScreen('screen-yay', 'screen-deep');
+        }
+
+        function showLoveLetter() {
+            switchScreen('screen-deep', 'screen-letter');
+            typeWriterPoem();
+        }
+
+        // --- 5. POEM TYPEWRITER LOGIC ---
+        const poemLines = [
+            "Our first handhold began with a laugh.",
+            "Our first kiss was thrilling.",
+            "Our days now live only through memories.",
+            "My hands need yours.",
+            "My lips miss you.",
+            "Nothing feels right when you’re not with me."
+        ];
+
+        function typeWriterPoem() {
+            const container = document.getElementById('poem-container');
+            container.innerHTML = ''; // Clear
+
+            let delay = 500;
+
+            poemLines.forEach((line, index) => {
+                setTimeout(() => {
+                    const p = document.createElement('p');
+                    p.className = 'poem-line';
+                    p.innerText = line;
+                    p.style.animation = 'fadeInUp 1.5s ease forwards';
+                    container.appendChild(p);
+                }, delay);
+                delay += 2000; // Wait 2s between lines
+            });
+
+            // Final signature
+            setTimeout(() => {
+                const sig = document.createElement('div');
+                sig.className = 'poem-signature';
+                sig.innerHTML = "I miss you and I love you, Shruthi.";
+                sig.style.opacity = 0;
+                sig.style.animation = 'fadeInUp 2s ease forwards';
+                container.appendChild(sig);
+                
+                // Final continuous fireworks
+                setInterval(() => {
+                    createFirework(Math.random() * w, Math.random() * h);
+                }, 800);
+
+            }, delay + 1000);
+        }
+
+    </script>
+</body>
+</html>
